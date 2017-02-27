@@ -1,6 +1,8 @@
 from django.shortcuts import render, get_object_or_404
 from django.utils import timezone
+from django.shortcuts import redirect
 from .models import Post
+from .forms import BlogPostForm
 
 
 # Create your views here.
@@ -36,3 +38,37 @@ def top_five(request):
     most_pop = Post.objects.filter(published_date__lte=timezone.now()
                                    ).order_by('-views')[:5]
     return render(request, "top_five.html", {'most_pop': most_pop})
+
+
+# def new_post(request):
+#     form = BlogPostForm()
+#     return render(request, 'blogpostform.html', {'form': form})
+
+def new_post(request):
+    if request.method == "POST":
+        form = BlogPostForm(request.POST, request.FILES)
+        if form.is_valid():
+            post = form.save(commit=False)
+            post.author = request.user
+            post.published_date = timezone.now()
+            post.save()
+            return redirect(post_detail, post.pk)
+    # Else GET method is used
+    else:
+        form = BlogPostForm()
+    return render(request, 'blogpostform.html', {'form':form})
+
+
+def edit_post(request, id):
+    post = get_object_or_404(Post, pk=id)
+    if request.method == "POST":
+        form = BlogPostForm(request.POST, request.FILES, instance=post)
+        if form.is_valid():
+            post = form.save(commit=Flase)
+            post.author = request.user
+            post.published_date = timezone.now()
+            post.save()
+            return redirect(post_detail, post.pk)
+    else:
+        form = BlogPostForm(instance=post)
+    return render(request, 'blogpostform.html', {'form': form})
